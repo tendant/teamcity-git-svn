@@ -1,0 +1,225 @@
+#!/usr/bin/env python
+
+import sys
+import subprocess
+import shlex
+import re
+import logging
+import tempfile
+import os
+
+logging.basicConfig(level=logging.INFO)
+
+tcc_jar = "/home/neil/bin/tcc.jar"
+tc_user = "username"
+tc_password = "pass"
+
+tc_server = "http://teamcity:8111"
+
+regex_sha1 = re.compile("([a-f0-9]{5,40})")
+
+build_mapping = {"t": "bt2", "c":"bt11", "p":"bt8"}
+config_mapping = {"t": ".=svn://9d512ef7-28b5-da11-a818-00123f20d848|V4/trunk",
+                  "c": ".=svn://9d512ef7-28b5-da11-a818-00123f20d848|V4/branches/b1111",
+                  "p": ".=svn://9d512ef7-28b5-da11-a818-00123f20d848|V4/branches/b1109p1"}
+
+
+def parse_args(argv):
+    for arg in argv:
+        pass
+        # print arg
+
+def find_last_svn_sha1():
+    '''
+    find sha1 of last svn revision.
+    '''
+    git_svn_info = shlex.split("git svn info")
+    git_svn_log_commit = shlex.split("git svn log --show-commit --oneline --limit=1")
+    try:
+        info = subprocess.check_output(git_svn_info, stderr=subprocess.STDOUT)
+        logging.debug("Result:\n%s", info)
+        svn_info = subprocess.check_output(git_svn_log_commit)
+        logging.debug("svn log info: %s", svn_info)
+        m = re.findall(regex_sha1, svn_info)
+        logging.info("SVN SHA1: %s", m)
+        if m:
+            if len(m) == 1:
+                svn_sha1 = m[0]
+                logging.info("Found SHA1:%s", svn_sha1)
+                return svn_sha1
+            else:
+                logging.error("Please report error: Found more than one svn revision: %s", m)
+        else:
+            logging.error("SVN information is not found., Please make sure you are running this command under git-svn enabled repository.")
+    except subprocess.CalledProcessError:
+        logging.error("No git-svn information. Please make sure you are running this command under git-svn enabled repository.")
+
+def find_git_commits(sha1_start, sha1_end="HEAD"):
+    if not sha1_start:
+        logging.warning("Please provide starting SHA1.")
+        return
+    git_rev_list = str.format("git rev-list {0}..{1}", sha1_start, sha1_end)
+    logging.debug("Finding commits: %s", shlex.split(git_rev_list))
+    try:
+        list_output = subprocess.check_output(shlex.split(git_rev_list))
+        logging.debug(list_output)
+        commits = re.findall(regex_sha1, list_output)
+        logging.info("Found commits:%s", commits)
+        return commits
+    except subprocess.CalledProcessError:
+        logging.error("Failed getting revision list for %s..%s", sha1_start, sha1_end)
+
+def find_commits_files(sha1_start, sha1_end="HEAD"):
+    if not sha1_start:
+        logging.warning("Please provide starting SHA1.")
+        return
+    git_diff_files = str.format("git diff --name-only {0}..{1}", sha1_start, sha1_end)
+    logging.debug("Finding commits: %s", shlex.split(git_diff_files))
+    try:
+        file_list_output = subprocess.check_output(shlex.split(git_diff_files))
+        logging.debug(file_list_output)
+        # file_list = re.findall(r"^.+$", file_list_output, re.MULTILINE)
+        logging.info("Found files:%s", file_list_output)
+        return file_list_output
+    except subprocess.CalledProcessError:
+        logging.error("Failed getting file list for %s..%s", sha1_start, sha1_end)
+
+def verify_commits(commits):
+    logging.info("Verifying commits...")
+    if (not commits) or len(commits) < 1:
+        logging.warning("No commits to verify.")
+    git_svn_dcommit_dry_run = shlex.split("git svn dcommit --dry-run")
+    svn_commits = subprocess.check_output(git_svn_dcommit_dry_run)
+    unique_svn_commits = set(re.findall(regex_sha1, svn_commits))
+    logging.debug("commits: %s", commits)
+    logging.debug("git svn commits: %s", unique_svn_commits)
+    if unique_svn_commits == commits:
+        return True
+    else:
+        return False
+
+def prompt_for_int(message, default=1, prompt="Please input:"):
+    print message
+    try:
+        while True:
+            choice=raw_input(prompt)
+            if not choice: 
+                choice = default
+            else:
+                choice = int(choice)
+            return choice
+    except KeyboardInterrupt as e:
+        logging.warning("Wrong input. %s", e)
+    except EOFError as e:
+        logging.warning("Wrong input. %s", e)
+    except Exception as e:
+        logging.warning("Wrong input. %s", e)
+
+def prompt_for_string(message, default="t", prompt="Please input:"):
+    print message
+    try:
+        while True:
+            choice=raw_input(prompt)
+            if not choice:
+                choice = default
+            return choice
+    except KeyboardInterrupt as e:
+        logging.warning("Wrong input. %s", e)
+    except EOFError as e:
+        logging.warning("Wrong input. %s", e)
+    except Exception as e:
+        logging.warning("Wrong input. %s", e)
+
+def teamcity_login(user, password):
+    info_line = str.format("java -jar {0} info", tcc_jar)
+    info_cmd = shlex.split(info_line)
+    logging.info("teamcity info: %s", info_line)
+    logging.debug("teamcity info: %s", info_cmd)
+    info_result = subprocess.call(info_cmd)
+    if info_result > 0:
+        
+        login_line = str.format("java -jar {0} login --host {1} --user {2} --password {3}", 
+                                tcc_jar, tc_server, user, password)
+        login_cmd = shlex.split(login_line)
+        logging.info("teamcity login: %s", login_line)
+        logging.debug("teamcity login: %s", login_cmd)
+        result = subprocess.check_call(login_cmd)
+        logging.debug(result)
+        logging.info("Login successful.")
+    else:
+        logging.info("User has been logged in")
+
+def submit_teamcity_build(files, choice, build_type):
+    f = tempfile.NamedTemporaryFile(delete=False)
+    logging.debug("Created temporary file: %s.", f.name)
+    f.write(files)
+    f.close()
+    config = open('.teamcity-mappings.properties', 'w')
+    logging.debug("Updating mapping file: %s, %s.", config.name, config_mapping.get(build_type))
+    config.write(config_mapping.get(build_type))
+    config.close()
+    file_list = re.findall(r"^.+$", files, re.MULTILINE)
+    teamcity_login(tc_user, tc_password)
+    logging.info("Submitting files to teamcity: %s", file_list)
+    teamcity_cmd_line = str.format('java -jar {0} run --host {1} -m "testing from command line" -c {2} --config-file {3} @{4}', tcc_jar, tc_server, build_mapping.get(build_type), config.name, f.name)
+    logging.info("Running: %s", teamcity_cmd_line)
+    teamcity_cmd = shlex.split(teamcity_cmd_line)
+    logging.debug(teamcity_cmd)
+    result = subprocess.check_call(teamcity_cmd)
+    logging.info("Teamcity Result: %s", result)
+    os.unlink(f.name)
+    return result
+
+def git_svn_dcommit(choice="s"):
+    if choice == "C":
+        logging.info("*** COMMITING to svn!")
+        dcommit_cmd = shlex.split("git svn dcommit -n")
+        logging.info("git svn dcommit SUCCESSFUL!")
+    else:
+        logging.info("--- Dry run git svn dcommit...")
+        dcommit_cmd = shlex.split("git svn dcommit -n")
+        logging.info("You are SAFE to commit now.")
+    logging.debug(dcommit_cmd)
+    result = subprocess.check_call(dcommit_cmd)
+    logging.info("git svn dcommit result: %s", result)
+
+if __name__ == "__main__":
+    parse_args(sys.argv)
+    sha1 = find_last_svn_sha1()
+    if sha1:
+        commits = find_git_commits(sha1)
+        if verify_commits(commits):
+            logging.warning("Verify commits Failed.")
+            exit(1)
+        else:
+            logging.warning("Verify commits successful.")
+        files = find_commits_files(sha1)
+        file_list = re.findall(r"^.+$", files, re.MULTILINE)
+        print "---Below files will be submitted to teamcity for build:---"
+        for filename in  file_list:
+          print "  ", filename, "\n"
+        print "[s]. Submit to teamcity for build."
+        print "[C]. Sumbit to teamcity for build and COMMIT to svn if it is successful." 
+        choice = prompt_for_int("Your choice[s, C], default [s].", default="s")
+        if choice == "s":
+            print "Submit to teamcity for build only."
+        elif choice == "C":
+            print "Submit to teamcity for build and commit to svn if it is successful. It takes time to wait for build."
+        else:
+            print "Not a valid choice. Exiting..."
+            exit(2)
+        print "[t]. For trunk build."
+        print "[c]. For candidate patch."
+        print "[p]. For production patch."
+        build_type = prompt_for_string("Your choice[t, c, p], default [t]", default="t")
+        if build_type in build_mapping.keys():
+            teamcity_login(tc_user, tc_password)
+            build_result = submit_teamcity_build(files, choice, build_type)
+            if build_result == 0:
+                git_svn_dcommit(choice)
+            else:
+                print "Bulid failed, please fix build issue and resubmit your commits."
+                exit(3)
+        else:
+            print "Not a valid choice. Exiting..."
+            exit(4)
