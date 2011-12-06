@@ -3,10 +3,9 @@ A simple script for git to working with Teamcity and subversion server.
 Prerequisition
 ====
 
+> Download the tcc.jar from the "My Settings & Tools" > "TeamCity Tools" side panel > "Command Line Remote Run" to any directory.
 
-Download teamcity command line client jar file.
-
-http://confluence.jetbrains.net/display/TW/Command+Line+Remote+Run+Tool
+> http://confluence.jetbrains.net/display/TW/Command+Line+Remote+Run+Tool
 
 Configuraiton
 ====
