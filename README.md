@@ -3,9 +3,13 @@ A simple script for git to work with Teamcity and subversion server.
 Prerequisition
 ====
 
+* tcc.jar 
+
 > Download the tcc.jar from the "My Settings & Tools" > "TeamCity Tools" side panel > "Command Line Remote Run" to any directory.
 
 > http://confluence.jetbrains.net/display/TW/Command+Line+Remote+Run+Tool
+
+* Python 2.7
 
 Configuraiton
 ====
@@ -13,6 +17,8 @@ Configuraiton
 * Update tcc_jar, tc_user, tc_password, tc_server in tc.py.
 
 * Update configure_mapping.
+
+    
 
 * Run below command.
 
