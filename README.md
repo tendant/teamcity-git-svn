@@ -6,7 +6,7 @@ Prerequisition
 
 Download teamcity command line client jar file.
 
-http://http://confluence.jetbrains.net/display/TW/Command+Line+Remote+Run+Tool
+http://confluence.jetbrains.net/display/TW/Command+Line+Remote+Run+Tool
 
 Configuraiton
 ====
