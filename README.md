@@ -17,7 +17,7 @@ Configuraiton
 
 * Run below command.
 
-    git config --global alias.tc \!/home/neil/workspace/teamcity/util/tc.py 
+    git config --global alias.tc \\!/home/neil/workspace/teamcity/util/tc.py 
 
   Note: update file path
 
