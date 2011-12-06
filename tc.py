@@ -16,7 +16,7 @@ tc_password = "pass"
 
 tc_server = "http://teamcity:8111"
 
-regex_sha1 = re.compile("([a-f0-9]{5,40})")
+regex_sha1 = re.compile("([a-f0-9]{7,40})")
 
 build_mapping = {"t": "bt2", "c":"bt11", "p":"bt8"}
 config_mapping = {"t": ".=svn://9d512ef7-28b5-da11-a818-00123f20d848|V4/trunk",
@@ -195,6 +195,9 @@ if __name__ == "__main__":
             logging.warning("Verify commits successful.")
         files = find_commits_files(sha1)
         file_list = re.findall(r"^.+$", files, re.MULTILINE)
+        if len(file_list) < 1:
+            print "No changes for submitting. Exiting..."
+            exit(0)
         print "---Below files will be submitted to teamcity for build:---"
         for filename in  file_list:
           print "  ", filename, "\n"
@@ -218,7 +221,7 @@ if __name__ == "__main__":
             if build_result == 0:
                 git_svn_dcommit(choice)
             else:
-                print "Bulid failed, please fix build issue and resubmit your commits."
+                logging.info("Bulid failed, please fix build issue and resubmit your commits. Check %s for more details", tc_server)
                 exit(3)
         else:
             print "Not a valid choice. Exiting..."
