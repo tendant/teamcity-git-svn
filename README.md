@@ -17,7 +17,7 @@ Configuraiton
 
 * Run below command.
 
-  git config --global alias.tc \!/home/neil/workspace/teamcity/util/tc.py 
+    git config --global alias.tc \!/home/neil/workspace/teamcity/util/tc.py 
 
   Note: update file path
 
@@ -26,4 +26,4 @@ Usage
 
   Run below command in git-svn enabled respository.
  
-  $ git tc
+    $ git tc
