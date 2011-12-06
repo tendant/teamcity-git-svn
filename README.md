@@ -1,4 +1,4 @@
-A simple script for git to working with Teamcity and subversion server.
+A simple script for git to work with Teamcity and subversion server.
 
 Prerequisition
 ====
