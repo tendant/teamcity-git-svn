@@ -104,16 +104,17 @@ def find_commits_files(sha1_start, sha1_end="HEAD"):
 
 def verify_commits(commits):
     logging.info("Verifying commits...")
+    logging.info('xx')
     if (not commits) or len(commits) < 1:
         logging.warning("No commits to verify.")
         return False
-    try: 
+    try:
         git_svn_dcommit_dry_run = shlex.split("git svn dcommit --dry-run")
         svn_commits = subprocess.check_output(git_svn_dcommit_dry_run)
-        unique_svn_commits = set(re.findall(regex_sha1, svn_commits))
-        logging.debug("commits: %s", commits)
-        logging.debug("git svn commits: %s", unique_svn_commits)
-        if unique_svn_commits == commits:
+        svn_commits_sha1 = re.findall(regex_sha1, svn_commits)
+        logging.info("commits: %s", commits)
+        logging.info("git svn commits: %s", svn_commits_sha1)
+        if set(svn_commits_sha1) == set(commits):
             return True
         else:
             return False
