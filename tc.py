@@ -7,22 +7,30 @@ import re
 import logging
 import tempfile
 import os
+import ConfigParser
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
-tcc_jar = "/home/neil/bin/tcc.jar"
-tc_user = "username"
-tc_password = "pass"
+config = ConfigParser.ConfigParser()
+config_file = os.path.join(os.path.dirname(__file__), "tc.cfg")
+logging.debug("Reading form configuration file %s.", config_file)
+config.read(config_file)
 
-tc_server = "http://teamcity:8111"
+tcc_jar = config.get("default", "tcc_jar")
+tc_user = config.get("default", "tc_user")
+tc_password = config.get("default", "tc_password")
+
+tc_server = config.get("default", "tc_server")
+
+builds = [build for build in config.sections() if build.lower() != "default"] 
+print builds
+build_mapping = {}
+for build in builds:
+    mapping = config.get(build, "mapping")
+    build_mapping.update({build:mapping})
+print build_mapping
 
 regex_sha1 = re.compile("([a-f0-9]{7,40})")
-
-build_mapping = {"t": "bt2", "c":"bt11", "p":"bt8"}
-config_mapping = {"t": ".=svn://9d512ef7-28b5-da11-a818-00123f20d848|V4/trunk",
-                  "c": ".=svn://9d512ef7-28b5-da11-a818-00123f20d848|V4/branches/b1111",
-                  "p": ".=svn://9d512ef7-28b5-da11-a818-00123f20d848|V4/branches/b1109p1"}
-
 
 def parse_args(argv):
     for arg in argv:
@@ -115,7 +123,7 @@ def prompt_for_int(message, default=1, prompt="Please input:"):
     except Exception as e:
         logging.warning("Wrong input. %s", e)
 
-def prompt_for_string(message, default="t", prompt="Please input:"):
+def prompt_for_string(message, default="default", prompt="Please input:"):
     print message
     try:
         while True:
@@ -154,14 +162,16 @@ def submit_teamcity_build(files, choice, build_type):
     logging.debug("Created temporary file: %s.", f.name)
     f.write(files)
     f.close()
-    config = open('.teamcity-mappings.properties', 'w')
-    logging.debug("Updating mapping file: %s, %s.", config.name, config_mapping.get(build_type))
-    config.write(config_mapping.get(build_type))
-    config.close()
+    mapping_config = open('.teamcity-mappings.properties', 'w')
+    logging.debug("Updating mapping file: %s, %s.", mapping_config.name, build_mapping.get(build_type))
+    aaa = build_mapping.get(build_type)
+    logging.debug(aaa)
+    mapping_config.write(aaa)
+    mapping_config.close()
     file_list = re.findall(r"^.+$", files, re.MULTILINE)
     teamcity_login(tc_user, tc_password)
     logging.info("Submitting files to teamcity: %s", file_list)
-    teamcity_cmd_line = str.format('java -jar {0} run --host {1} -m "testing from command line" -c {2} --config-file {3} @{4}', tcc_jar, tc_server, build_mapping.get(build_type), config.name, f.name)
+    teamcity_cmd_line = str.format('java -jar {0} run --host {1} -m "testing from command line" -c {2} --config-file {3} @{4}', tcc_jar, tc_server, build_type, mapping_config.name, f.name)
     logging.info("Running: %s", teamcity_cmd_line)
     teamcity_cmd = shlex.split(teamcity_cmd_line)
     logging.debug(teamcity_cmd)
@@ -202,8 +212,8 @@ if __name__ == "__main__":
         for filename in  file_list:
           print "  ", filename, "\n"
         print "[s]. Submit to teamcity for build."
-        print "[C]. Sumbit to teamcity for build and COMMIT to svn if it is successful." 
-        choice = prompt_for_int("Your choice[s, C], default [s].", default="s")
+        print "[C]. Sumbit to teamcity for build and COMMIT to svn if it is successful."
+        choice = prompt_for_string("Your choice[s, C], default [s].", default="s")
         if choice == "s":
             print "Submit to teamcity for build only."
         elif choice == "C":
@@ -211,10 +221,11 @@ if __name__ == "__main__":
         else:
             print "Not a valid choice. Exiting..."
             exit(2)
-        print "[t]. For trunk build."
-        print "[c]. For candidate patch."
-        print "[p]. For production patch."
-        build_type = prompt_for_string("Your choice[t, c, p], default [t]", default="t")
+        for build in builds:
+            print("[%s].For %s.", build, config.get(build, "name"))
+        default_build = config.get("default", "build")
+        prompt = str.format("Your choices[{0}], default [{1}]", builds, default_build)
+        build_type = prompt_for_string(prompt, default=default_build)
         if build_type in build_mapping.keys():
             teamcity_login(tc_user, tc_password)
             build_result = submit_teamcity_build(files, choice, build_type)
