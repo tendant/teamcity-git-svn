@@ -104,7 +104,6 @@ def find_commits_files(sha1_start, sha1_end="HEAD"):
 
 def verify_commits(commits):
     logging.info("Verifying commits...")
-    logging.info('xx')
     if (not commits) or len(commits) < 1:
         logging.warning("No commits to verify.")
         return False
