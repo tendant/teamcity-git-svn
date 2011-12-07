@@ -18,6 +18,7 @@ Configuraiton
 
 * Update configure_mapping in tc.cfg.
 
+    You should be able to find mapping configuration from "My Settings & Tools" > "TeamCity Tools" side panel > "Command Line Remote Run" in your teamcity server..
 
 * Run below command.
 
