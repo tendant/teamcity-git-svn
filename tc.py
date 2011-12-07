@@ -11,6 +11,10 @@ import ConfigParser
 
 logging.basicConfig(level=logging.DEBUG)
 
+if sys.version < '2.7':
+    print 'You need at least Python 2.7+.'
+    sys.exit(1)
+
 config = ConfigParser.ConfigParser()
 config_file = os.path.join(os.path.dirname(__file__), "tc.cfg")
 logging.debug("Reading form configuration file %s.", config_file)
