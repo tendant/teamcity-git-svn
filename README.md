@@ -14,11 +14,10 @@ Prerequisition
 Configuraiton
 ====
 
-* Update tcc_jar, tc_user, tc_password, tc_server in tc.py.
+* Copy tc.cfg.sample to tc.cfg, and update tcc_jar, tc_user, tc_password, tc_server in tc.cfg.
 
-* Update configure_mapping.
+* Update configure_mapping in tc.cfg.
 
-    
 
 * Run below command.
 
