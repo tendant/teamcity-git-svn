@@ -9,7 +9,7 @@ import tempfile
 import os
 import ConfigParser
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 if sys.version < '2.7':
     print 'You need at least Python 2.7+.'
