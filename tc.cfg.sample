@@ -1,8 +1,8 @@
 [default]
-tcc_jar: "/home/neil/bin/tcc.jar"
-tc_user: "username"
-tc_password: "pass"
-tc_server: "http://teamcity:8111"
+tcc_jar: /home/neil/bin/tcc.jar
+tc_user: username
+tc_password: pass
+tc_server: http://teamcity:8111
 build: bt2
 
 [bt2]
