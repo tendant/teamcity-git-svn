@@ -97,7 +97,7 @@ def find_commits_files(sha1_start, sha1_end="HEAD"):
         file_list_output = subprocess.check_output(shlex.split(git_diff_files))
         logging.debug(file_list_output)
         # file_list = re.findall(r"^.+$", file_list_output, re.MULTILINE)
-        logging.info("Found files:%s", file_list_output)
+        # logging.info("Found files:%s", file_list_output)
         return file_list_output
     except subprocess.CalledProcessError:
         logging.error("Failed getting file list for %s..%s", sha1_start, sha1_end)
