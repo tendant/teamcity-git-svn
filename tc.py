@@ -106,15 +106,20 @@ def verify_commits(commits):
     logging.info("Verifying commits...")
     if (not commits) or len(commits) < 1:
         logging.warning("No commits to verify.")
-    git_svn_dcommit_dry_run = shlex.split("git svn dcommit --dry-run")
-    svn_commits = subprocess.check_output(git_svn_dcommit_dry_run)
-    unique_svn_commits = set(re.findall(regex_sha1, svn_commits))
-    logging.debug("commits: %s", commits)
-    logging.debug("git svn commits: %s", unique_svn_commits)
-    if unique_svn_commits == commits:
-        return True
-    else:
         return False
+    try: 
+        git_svn_dcommit_dry_run = shlex.split("git svn dcommit --dry-run")
+        svn_commits = subprocess.check_output(git_svn_dcommit_dry_run)
+        unique_svn_commits = set(re.findall(regex_sha1, svn_commits))
+        logging.debug("commits: %s", commits)
+        logging.debug("git svn commits: %s", unique_svn_commits)
+        if unique_svn_commits == commits:
+            return True
+        else:
+            return False
+    except subprocess.CalledProcessError, e:
+        logging.error("Failed verifying commits. %s", e)
+        logging.info("Possible reason: There are local changes in working directory, please commit or stash them before trying.")
 
 def prompt_for_int(message, default=1, prompt="Please input:"):
     print message
@@ -208,7 +213,7 @@ if __name__ == "__main__":
     sha1 = find_last_svn_sha1()
     if sha1:
         commits = find_git_commits(sha1)
-        if verify_commits(commits):
+        if not verify_commits(commits):
             logging.warning("Verify commits Failed.")
             exit(1)
         else:
