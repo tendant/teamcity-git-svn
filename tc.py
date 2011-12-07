@@ -44,7 +44,9 @@ def find_last_svn_sha1():
     find sha1 of last svn revision.
     '''
     git_svn_info = shlex.split("git svn info")
-    git_svn_log_commit = shlex.split("git svn log --show-commit --oneline --limit=1")
+    # git_svn_log_commit = shlex.split("git svn log --show-commit --oneline --limit=1")
+    # find last svn commit in current history
+    git_svn_log_commit = shlex.split("git log --grep=`git svn info --url` --oneline --max-count=1")
     try:
         info = subprocess.check_output(git_svn_info, stderr=subprocess.STDOUT)
         logging.debug("Result:\n%s", info)
