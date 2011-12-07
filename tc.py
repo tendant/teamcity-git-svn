@@ -43,13 +43,19 @@ def find_last_svn_sha1():
     '''
     find sha1 of last svn revision.
     '''
-    git_svn_info = shlex.split("git svn info")
+    # git_svn_info = shlex.split("git svn info")
+    git_svn_url = shlex.split("git svn info --url")
     # git_svn_log_commit = shlex.split("git svn log --show-commit --oneline --limit=1")
     # find last svn commit in current history
-    git_svn_log_commit = shlex.split("git log --grep=`git svn info --url` --oneline --max-count=1")
     try:
-        info = subprocess.check_output(git_svn_info, stderr=subprocess.STDOUT)
-        logging.debug("Result:\n%s", info)
+        svn_url_result = subprocess.check_output(git_svn_url, stderr=subprocess.STDOUT)
+        logging.debug("Result:\n%s", svn_url_result)
+        svn_url = re.sub("\n", "", svn_url_result)
+        logging.debug("svn url: ", svn_url)
+        git_svn_log_commit_str = str.format('git log --grep="{0}" --oneline --max-count=1', svn_url)
+        logging.debug("Shell for finding last svn commits: %s.", git_svn_log_commit_str)
+        git_svn_log_commit = shlex.split(git_svn_log_commit_str)
+        logging.debug("Finding last svn commits: %s", git_svn_log_commit)
         svn_info = subprocess.check_output(git_svn_log_commit)
         logging.debug("svn log info: %s", svn_info)
         m = re.findall(regex_sha1, svn_info)
@@ -63,8 +69,8 @@ def find_last_svn_sha1():
                 logging.error("Please report error: Found more than one svn revision: %s", m)
         else:
             logging.error("SVN information is not found., Please make sure you are running this command under git-svn enabled repository.")
-    except subprocess.CalledProcessError:
-        logging.error("No git-svn information. Please make sure you are running this command under git-svn enabled repository.")
+    except subprocess.CalledProcessError, e:
+        logging.error("No git-svn information. Please make sure you are running this command under git-svn enabled repository.", e)
 
 def find_git_commits(sha1_start, sha1_end="HEAD"):
     if not sha1_start:
@@ -206,7 +212,7 @@ if __name__ == "__main__":
             logging.warning("Verify commits Failed.")
             exit(1)
         else:
-            logging.warning("Verify commits successful.")
+            logging.info("Verify commits successful.")
         files = find_commits_files(sha1)
         file_list = re.findall(r"^.+$", files, re.MULTILINE)
         if len(file_list) < 1:
