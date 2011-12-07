@@ -1,0 +1,18 @@
+[default]
+tcc_jar: "/home/neil/bin/tcc.jar"
+tc_user: "username"
+tc_password: "pass"
+tc_server: "http://teamcity:8111"
+build: bt2
+
+[bt2]
+name: trunk
+mapping: .=svn://9d512ef7-28b5-da11-a818-00123f20d848|projectA/trunk
+
+[bt11]
+name: branch1
+mapping: .=svn://9d512ef7-28b5-da11-a818-00123f20d848|projectA/branches/branch01
+
+[bt8]
+name: patch
+mapping: .=svn://9d512ef7-28b5-da11-a818-00123f20d848|projectA/branches/branchp1
