@@ -27,12 +27,10 @@ tc_password = config.get("default", "tc_password")
 tc_server = config.get("default", "tc_server")
 
 builds = [build for build in config.sections() if build.lower() != "default"] 
-print builds
 build_mapping = {}
 for build in builds:
     mapping = config.get(build, "mapping")
     build_mapping.update({build:mapping})
-print build_mapping
 
 regex_sha1 = re.compile("([a-f0-9]{7,40})")
 
