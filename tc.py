@@ -72,6 +72,18 @@ def find_last_svn_sha1():
     except subprocess.CalledProcessError, e:
         logging.error("No git-svn information. Please make sure you are running this command under git-svn enabled repository.", e)
 
+def find_git_last_commit_msg():
+    '''
+    Find commit message of last check in.
+    '''
+    git_commit_msg_cmd = shlex.split("git log -1 --format=%s")
+    try:
+        msg_output = subprocess.check_output(git_commit_msg_cmd)
+        logging.debug(msg_output)
+        return msg_output
+    except subprocess.CalledProcessError, e:
+        logging.error("Failed getting commit message.", e)
+
 def find_git_commits(sha1_start, sha1_end="HEAD"):
     if not sha1_start:
         logging.warning("Please provide starting SHA1.")
@@ -185,8 +197,9 @@ def submit_teamcity_build(files, choice, build_type):
     mapping_config.close()
     file_list = re.findall(r"^.+$", files, re.MULTILINE)
     teamcity_login(tc_user, tc_password)
+    commit_msg = find_git_last_commit_msg()
     logging.info("Submitting files to teamcity: %s", file_list)
-    teamcity_cmd_line = str.format('java -jar {0} run --host {1} -m "testing from command line" -c {2} --config-file {3} @{4}', tcc_jar, tc_server, build_type, mapping_config.name, f.name)
+    teamcity_cmd_line = str.format('java -jar {0} run --host {1} -c {2} -m "{3}" --config-file {4} @{5}', tcc_jar, tc_server, build_type, commit_msg, mapping_config.name, f.name)
     logging.info("Running: %s", teamcity_cmd_line)
     teamcity_cmd = shlex.split(teamcity_cmd_line)
     logging.debug(teamcity_cmd)
@@ -198,7 +211,7 @@ def submit_teamcity_build(files, choice, build_type):
 def git_svn_dcommit(choice="s"):
     if choice == "C":
         logging.info("*** COMMITING to svn!")
-        dcommit_cmd = shlex.split("git svn dcommit -n")
+        dcommit_cmd = shlex.split("git svn dcommit")
         logging.info("git svn dcommit SUCCESSFUL!")
     else:
         logging.info("--- Dry run git svn dcommit...")
