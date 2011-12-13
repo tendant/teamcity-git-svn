@@ -80,7 +80,19 @@ def find_git_last_commit_msg():
     try:
         msg_output = subprocess.check_output(git_commit_msg_cmd)
         logging.debug(msg_output)
-        return msg_output
+        return re.sub("\n", "", msg_output)
+    except subprocess.CalledProcessError, e:
+        logging.error("Failed getting commit message.", e)
+
+def find_branch_name():
+    '''
+    Find current branch name
+    '''
+    branch_name_cmd = shlex.split("git name-rev --name-only HEAD")
+    try:
+        msg_output = subprocess.check_output(branch_name_cmd)
+        logging.debug(msg_output)
+        return re.sub("\n", "", msg_output)
     except subprocess.CalledProcessError, e:
         logging.error("Failed getting commit message.", e)
 
@@ -197,7 +209,7 @@ def submit_teamcity_build(files, choice, build_type):
     mapping_config.close()
     file_list = re.findall(r"^.+$", files, re.MULTILINE)
     teamcity_login(tc_user, tc_password)
-    commit_msg = find_git_last_commit_msg()
+    commit_msg = find_branch_name() + ": " + find_git_last_commit_msg()
     logging.info("Submitting files to teamcity: %s", file_list)
     teamcity_cmd_line = str.format('java -jar {0} run --host {1} -c {2} -m "{3}" --config-file {4} @{5}', tcc_jar, tc_server, build_type, commit_msg, mapping_config.name, f.name)
     logging.info("Running: %s", teamcity_cmd_line)
