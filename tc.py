@@ -8,8 +8,11 @@ import logging
 import tempfile
 import os
 import ConfigParser
+import urllib2
+import base64
+from xml.etree import ElementTree as ET
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 if sys.version < '2.7':
     print 'You need at least Python 2.7+.'
@@ -26,18 +29,53 @@ tc_password = config.get("default", "tc_password")
 
 tc_server = config.get("default", "tc_server")
 
-builds = [build for build in config.sections() if build.lower() != "default"] 
-build_mapping = {}
-for build in builds:
-    mapping = config.get(build, "mapping")
-    build_mapping.update({build:mapping})
-
 regex_sha1 = re.compile("([a-f0-9]{7,40})")
 
 def parse_args(argv):
     for arg in argv:
         pass
         # print arg
+
+def url_open(url, user=None, password=None, data=None, xml=False):
+    '''Open a URL using the urllib2 openner. Return True if successful, False if failed.'''
+    request = urllib2.Request(url, data)
+    if xml:
+        request.add_header('Content-Type', 'application/xml')
+    if user:
+        base64string = base64.encodestring('%s:%s' % (user, password)).replace('\n', '')
+        print "Authorizing..."
+        request.add_header("Authorization", "Basic %s" % base64string)
+    else:
+        print "No authorization."
+    try:
+        response = urllib2.urlopen(request)
+        return response
+    except urllib2.HTTPError as err:
+        print "HTTP ERROR:" + str(err.code)
+
+def get_build_types():
+    '''Get all builds from teamcity server, check http://teamcity/app/rest/application.wadl for more teamcity api details.'''
+    url = tc_server + "/app/rest/buildTypes"
+    resp = url_open(url, tc_user, tc_password)
+    response = resp.read()
+    logging.debug("response: %s.\n", response)
+    if response:
+        logging.debug("Builds response: %s", response)
+        root = ET.XML(response)
+        buildTypes = root.findall("buildType")
+        if not buildTypes:
+            logging.warn("Cannot find any build type in teamcity server.")
+        return buildTypes
+    
+def get_build_mapping_configure(buildTypeId):
+    '''Get configuration for given build type id.'''
+    if buildTypeId:
+        url = tc_server + "/ajax.html?mappingFor=" + buildTypeId
+        logging.info("requesting build configuration from: %s\n", url)
+        resp = url_open(url, tc_user, tc_password);
+        if resp:
+            root = ET.XML(resp.read())
+            return root.find("*/map[@from]").attrib
 
 def find_last_svn_sha1():
     '''
@@ -202,10 +240,10 @@ def submit_teamcity_build(files, choice, build_type):
     f.write(files)
     f.close()
     mapping_config = open('.teamcity-mappings.properties', 'w')
-    logging.debug("Updating mapping file: %s, %s.", mapping_config.name, build_mapping.get(build_type))
-    aaa = build_mapping.get(build_type)
-    logging.debug(aaa)
-    mapping_config.write(aaa)
+    build_type_conf = get_build_mapping_configure(build_type)
+    mapping_content = str.format("{0}={1}", build_type_conf.get("from"), build_type_conf.get("to"))
+    logging.debug("mapping file content: %s\n", mapping_content)
+    mapping_config.write(mapping_content)
     mapping_config.close()
     file_list = re.findall(r"^.+$", files, re.MULTILINE)
     teamcity_login(tc_user, tc_password)
@@ -261,12 +299,13 @@ if __name__ == "__main__":
         else:
             print "Not a valid choice. Exiting..."
             exit(2)
-        for build in builds:
-            print("[%s].For %s.", build, config.get(build, "name"))
+        buildTypes = get_build_types()
+        for build in buildTypes:
+            print(str.format("\t[{0}]\tFor {1}.", build.get("id"), build.get("name")))
         default_build = config.get("default", "build")
-        prompt = str.format("Your choices[{0}], default [{1}]", builds, default_build)
+        prompt = str.format("Your choices, default [{0}]", default_build)
         build_type = prompt_for_string(prompt, default=default_build)
-        if build_type in build_mapping.keys():
+        if build_type in [build.get("id") for build in buildTypes]:
             teamcity_login(tc_user, tc_password)
             build_result = submit_teamcity_build(files, choice, build_type)
             if build_result == 0:
