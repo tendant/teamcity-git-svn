@@ -12,7 +12,7 @@ import urllib2
 import base64
 from xml.etree import ElementTree as ET
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.WARN)
 
 if sys.version < '2.7':
     print 'You need at least Python 2.7+.'
