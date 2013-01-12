@@ -12,8 +12,8 @@ import urllib2
 import base64
 from xml.etree import ElementTree as ET
 
-# logging.basicConfig(level=logging.WARN)
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.WARN)
+# logging.basicConfig(level=logging.DEBUG)
 
 if sys.version < '2.7':
     print 'You need at least Python 2.7+.'
@@ -250,7 +250,7 @@ def submit_teamcity_build(files, choice, build_type):
     teamcity_login(tc_user, tc_password)
     commit_msg = find_branch_name() + ": " + find_git_last_commit_msg()
     logging.info("Submitting files to teamcity: %s", file_list)
-    teamcity_cmd_line = str.format('java -jar {0} run --host {1} -c {2} -m "{3}" --config-file {4} @{5}', tcc_jar, tc_server, build_type, commit_msg, mapping_config.name, f.name)
+    teamcity_cmd_line = str.format('java -jar {0} run --host {1} -c {2} -m "{3}" -n {4} @{5}', tcc_jar, tc_server, build_type, commit_msg, mapping_config.name, f.name)
     logging.info("Running: %s", teamcity_cmd_line)
     teamcity_cmd = shlex.split(teamcity_cmd_line)
     logging.debug(teamcity_cmd)
