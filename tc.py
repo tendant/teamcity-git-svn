@@ -76,7 +76,7 @@ def get_build_mapping_configure(buildTypeId):
         resp = url_open(url, tc_user, tc_password);
         if resp:
             root = ET.XML(resp.read())
-            return root.find("*/map[@from]").attrib
+            return root.find("*/map[@from][last()]").attrib
 
 def find_last_svn_sha1():
     '''
@@ -242,7 +242,8 @@ def submit_teamcity_build(files, choice, build_type):
     f.close()
     mapping_config = open('.teamcity-mappings.properties', 'w')
     build_type_conf = get_build_mapping_configure(build_type)
-    mapping_content = str.format("{0}={1}", build_type_conf.get("from"), build_type_conf.get("to"))
+    # mapping_content = str.format("{0}={1}", build_type_conf.get("from"), build_type_conf.get("to"))
+    mapping_content = str.format(".={1}", build_type_conf.get("from"), build_type_conf.get("to"))
     logging.debug("mapping file content: %s\n", mapping_content)
     mapping_config.write(mapping_content)
     mapping_config.close()
