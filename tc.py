@@ -75,8 +75,17 @@ def get_build_mapping_configure(buildTypeId):
         logging.info("requesting build configuration from: %s\n", url)
         resp = url_open(url, tc_user, tc_password);
         if resp:
-            root = ET.XML(resp.read())
-            return root.find("*/map[@from][last()]").attrib
+            resp_text = resp.read()
+            logging.debug("mapping from teamcity server: " + resp_text)
+            root = ET.XML(resp_text)
+            elements = root.findall("*/map[@from]")
+            for elem in elements:
+                if "packaging" == elem.get("from"):
+                    elements.remove(elem)
+            if len(elements) != 1:
+                logging.error("mapping configuration is not correct. \n" + resp_text)
+                sys.exit(1)
+            return elements[0].attrib
 
 def find_last_svn_sha1():
     '''
