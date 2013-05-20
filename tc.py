@@ -80,7 +80,7 @@ def get_build_mapping_configure(buildTypeId):
             root = ET.XML(resp_text)
             elements = root.findall("*/map[@from]")
             for elem in elements:
-                if "packaging" == elem.get("from"):
+                if "build-system" == elem.get("from"):
                     elements.remove(elem)
             if len(elements) != 1:
                 logging.error("mapping configuration is not correct. \n" + resp_text)
