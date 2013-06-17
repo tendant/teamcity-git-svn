@@ -11,6 +11,7 @@ import ConfigParser
 import urllib2
 import base64
 from xml.etree import ElementTree as ET
+import getpass
 
 logging.basicConfig(level=logging.WARN)
 # logging.basicConfig(level=logging.DEBUG)
@@ -26,7 +27,10 @@ config.read(config_file)
 
 tcc_jar = config.get("default", "tcc_jar")
 tc_user = config.get("default", "tc_user")
-tc_password = config.get("default", "tc_password")
+if config.has_option("default", "tc_password"):
+    tc_password = config.get("default", "tc_password")
+else:
+    tc_password = None
 
 tc_server = config.get("default", "tc_server")
 
@@ -283,10 +287,17 @@ def git_svn_dcommit(choice="s"):
     result = subprocess.check_call(dcommit_cmd)
     logging.info("git svn dcommit result: %s", result)
 
+def get_password(password):
+    if not password:
+        print "No password in configuration file (tc.cfg)."
+        password = getpass.getpass("Teamcity password for user '" + tc_user + "': ")
+    return password
+
 if __name__ == "__main__":
     parse_args(sys.argv)
     sha1 = find_last_svn_sha1()
     if sha1:
+        tc_password = get_password(tc_password)
         commits = find_git_commits(sha1)
         if not verify_commits(commits):
             logging.warning("Verify commits Failed.")
