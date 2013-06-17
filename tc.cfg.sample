@@ -1,6 +1,7 @@
 [default]
 tcc_jar: /home/neil/bin/tcc.jar
 tc_user: username
+# If you comment out tc_password, you will be asked for password
 tc_password: pass
-tc_server: http://teamcity:8111
+tc_server: http://teamcity
 build: bt2
