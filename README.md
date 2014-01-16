@@ -9,7 +9,9 @@ Prerequisition
 
 > http://confluence.jetbrains.net/display/TW/Command+Line+Remote+Run+Tool
 
-* Python 2.7
+* Python 3
+
+    If you have Python 2.7+, please check out branch "python-2.7" intead.
 
 Configuraiton
 ====
@@ -18,9 +20,9 @@ Configuraiton
 
 * Run below command.
 
-    git config --global alias.tc \\!/home/neil/workspace/teamcity/util/tc.py 
+    git config --global alias.tc \\!/home/neil/workspace/teamcity-git-svn/tc.py 
 
-  Note: update file path
+  Note: update file path, there is only one backslash before '!'
 
 Usage
 ====

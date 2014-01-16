@@ -1,3 +1,5 @@
+#! /usr/bin/env python3
+
 import sys
 import subprocess
 import shlex
@@ -14,8 +16,8 @@ import getpass
 logging.basicConfig(level=logging.WARN)
 # logging.basicConfig(level=logging.DEBUG)
 
-if sys.version < '2.7':
-    print('You need at least Python 2.7+.')
+if sys.version < '3.0':
+    print('You need at least Python 3+. If you are still using Python 2.7+, please check out branch "python-2.7" instead.')
     sys.exit(1)
 
 config = configparser.ConfigParser()
