@@ -1,0 +1,10 @@
+1. Script conforms to Python 3.3
+2. Update imports
+3. Add braces to all print statements
+4. Typos
+5. Several functions need byte strings
+6. API Changes - build types REST API to get build info instead of ajax.html
+7. String cleanups
+8. Single commit does no match issue in find_git_commits
+9. Exceptions use 'as'd
+10.Use pre-created .teamcity-mappings.properties file. API to retrieve mappings does not exist any more
